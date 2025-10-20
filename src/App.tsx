@@ -1,22 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
+import SimpleDashboard from './components/SimpleDashboard';
 import Products from './components/Products';
 import Orders from './components/Orders';
 import Customers from './components/Customers';
 import Analytics from './components/Analytics';
 import Settings from './components/Settings';
-import NotificationSystem, { useNotifications } from './components/NotificationSystem';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
-  const notifications = useNotifications();
 
   const renderView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <SimpleDashboard />;
       case 'products':
         return <Products />;
       case 'orders':
@@ -41,12 +39,6 @@ function App() {
             <h1 className="text-2xl font-bold text-gray-800">AST Pickle Pro Panel</h1>
             <p className="text-gray-600">Manage your pickle business efficiently</p>
           </div>
-          <NotificationSystem
-            notifications={notifications.notifications}
-            onMarkAsRead={notifications.markAsRead}
-            onRemove={notifications.removeNotification}
-            onClearAll={notifications.clearAll}
-          />
         </div>
 
         <div className="flex">
