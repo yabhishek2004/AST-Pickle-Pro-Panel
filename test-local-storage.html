@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Storage Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 10px 15px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .result { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Local Storage Test for Pickle Pro Panel</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Add Sample Product</h3>
+        <button onclick="addSampleProduct()">Add Sample Product</button>
+        <div id="test1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Retrieve Products</h3>
+        <button onclick="getProducts()">Get All Products</button>
+        <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Clear Storage</h3>
+        <button onclick="clearStorage()">Clear All Data</button>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Current Storage Status</h3>
+        <div id="storage-status" class="result"></div>
+    </div>
+
+    <script>
+        // Local Storage Helper Functions (same as in the app)
+        const localStorageHelpers = {
+            getProducts: () => {
+                try {
+                    const stored = localStorage.getItem('pickle_products');
+                    return stored ? JSON.parse(stored) : [];
+                } catch (error) {
+                    console.error('Error reading products from localStorage:', error);
+                    return [];
+                }
+            },
+
+            saveProducts: (products) => {
+                try {
+                    localStorage.setItem('pickle_products', JSON.stringify(products));
+                } catch (error) {
+                    console.error('Error saving products to localStorage:', error);
+                }
+            },
+
+            addProduct: (product) => {
+                const products = localStorageHelpers.getProducts();
+                const newProduct = {
+                    ...product,
+                    id: crypto.randomUUID(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+                products.push(newProduct);
+                localStorageHelpers.saveProducts(products);
+                return newProduct;
+            }
+        };
+
+        function addSampleProduct() {
+            try {
+                const sampleProduct = {
+                    name: 'Test Mango Pickle',
+                    description: 'Delicious traditional mango pickle',
+                    category: 'Traditional',
+                    price: 150,
+                    cost: 100,
+                    stock_quantity: 25,
+                    unit: 'jar',
+                    sku: 'TEST-001',
+                    image_url: '',
+                    is_active: true
+                };
+
+                const added = localStorageHelpers.addProduct(sampleProduct);
+                document.getElementById('test1-result').innerHTML = 
+                    `<div class="success">✅ Product added successfully!<br>ID: ${added.id}<br>Name: ${added.name}</div>`;
+                updateStorageStatus();
+            } catch (error) {
+                document.getElementById('test1-result').innerHTML = 
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function getProducts() {
+            try {
+                const products = localStorageHelpers.getProducts();
+                document.getElementById('test2-result').innerHTML = 
+                    `<div class="success">✅ Found ${products.length} products:<br><pre>${JSON.stringify(products, null, 2)}</pre></div>`;
+            } catch (error) {
+                document.getElementById('test2-result').innerHTML = 
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearStorage() {
+            try {
+                localStorage.removeItem('pickle_products');
+                localStorage.removeItem('pickle_customers');
+                localStorage.removeItem('pickle_orders');
+                document.getElementById('test3-result').innerHTML = 
+                    `<div class="success">✅ All data cleared from localStorage</div>`;
+                updateStorageStatus();
+            } catch (error) {
+                document.getElementById('test3-result').innerHTML = 
+                    `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function updateStorageStatus() {
+            const products = localStorageHelpers.getProducts();
+            const customers = localStorage.getItem('pickle_customers') ? JSON.parse(localStorage.getItem('pickle_customers')) : [];
+            const orders = localStorage.getItem('pickle_orders') ? JSON.parse(localStorage.getItem('pickle_orders')) : [];
+            
+            document.getElementById('storage-status').innerHTML = 
+                `<strong>Storage Status:</strong><br>
+                Products: ${products.length}<br>
+                Customers: ${customers.length}<br>
+                Orders: ${orders.length}<br>
+                <small>Data persists in browser's localStorage</small>`;
+        }
+
+        // Initialize
+        updateStorageStatus();
+    </script>
+</body>
+</html>
