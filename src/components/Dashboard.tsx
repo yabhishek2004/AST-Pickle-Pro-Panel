@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { supabase, localStorageHelpers, useLocalStorage } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
-import { Package, ShoppingCart, Users, TrendingUp, DollarSign, AlertCircle, Star, Trophy, Target, Zap } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, DollarSign, AlertCircle } from 'lucide-react';
 
 type Stats = {
   totalProducts: number;
