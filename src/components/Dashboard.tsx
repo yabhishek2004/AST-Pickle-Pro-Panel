@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { supabase, localStorageHelpers, useLocalStorage } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
-import { Package, ShoppingCart, Users, TrendingUp, DollarSign, AlertCircle } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, DollarSign, AlertCircle, Star, Trophy, Target, Zap } from 'lucide-react';
 
 type Stats = {
   totalProducts: number;
@@ -12,11 +12,73 @@ type Stats = {
   todayOrders: number;
 };
 
+// Animated Counter Component
+function AnimatedCounter({ value, duration = 2000 }: { value: number; duration?: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime: number;
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOut * value));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return <span>{count.toLocaleString()}</span>;
+}
+
+// Achievement Badge Component
+function AchievementBadge({ title, description, icon: Icon, unlocked }: { 
+  title: string; 
+  description: string; 
+  icon: any; 
+  unlocked: boolean; 
+}) {
+  return (
+    <div className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+      unlocked 
+        ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300 shadow-lg' 
+        : 'bg-gray-50 border-gray-200 opacity-60'
+    }`}>
+      <div className="flex items-center space-x-3">
+        <div className={`p-2 rounded-lg ${unlocked ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+          <Icon className={`w-6 h-6 ${unlocked ? 'text-yellow-600' : 'text-gray-400'}`} />
+        </div>
+        <div>
+          <h4 className={`font-semibold ${unlocked ? 'text-yellow-800' : 'text-gray-500'}`}>
+            {title}
+          </h4>
+          <p className={`text-sm ${unlocked ? 'text-yellow-600' : 'text-gray-400'}`}>
+            {description}
+          </p>
+        </div>
+        {unlocked && <Star className="w-5 h-5 text-yellow-500" />}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { theme, themeColors } = useTheme();
+  const [showCelebration, setShowCelebration] = useState(false);
 
 
 
+
+  // Celebration effect for milestones
+  useEffect(() => {
+    if (stats.totalOrders > 0 && stats.totalOrders % 10 === 0) {
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
+    }
+  }, [stats.totalOrders]);
 
   const stats = useMemo(() => {
     try {
@@ -99,11 +161,76 @@ export default function Dashboard() {
   ];
 
 
+  // Calculate achievements
+  const achievements = [
+    {
+      title: "First Sale",
+      description: "Made your first sale!",
+      icon: Star,
+      unlocked: stats.totalOrders >= 1
+    },
+    {
+      title: "Product Master",
+      description: "Added 5+ products to your catalog",
+      icon: Package,
+      unlocked: stats.totalProducts >= 5
+    },
+    {
+      title: "Customer Magnet",
+      description: "Attracted 10+ customers",
+      icon: Users,
+      unlocked: stats.totalCustomers >= 10
+    },
+    {
+      title: "Revenue Champion",
+      description: "Generated ₹10,000+ in revenue",
+      icon: Trophy,
+      unlocked: stats.totalRevenue >= 10000
+    },
+    {
+      title: "Daily Achiever",
+      description: "Made 5+ sales in a day",
+      icon: Target,
+      unlocked: stats.todayOrders >= 5
+    },
+    {
+      title: "Growth Expert",
+      description: "Reached 50+ total orders",
+      icon: TrendingUp,
+      unlocked: stats.totalOrders >= 50
+    }
+  ];
+
+  const unlockedAchievements = achievements.filter(a => a.unlocked).length;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h2>
-        <p className="text-gray-600">Welcome back! Here's what's happening with your pickle business.</p>
+      {/* Celebration Banner */}
+      {showCelebration && (
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-xl animate-pulse">
+          <div className="flex items-center space-x-3">
+            <Trophy className="w-8 h-8" />
+            <div>
+              <h3 className="font-bold text-lg">🎉 Milestone Achieved!</h3>
+              <p>You've reached {stats.totalOrders} orders! Keep up the great work!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h2>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your pickle business.</p>
+        </div>
+        <div className="text-right">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Trophy className="w-5 h-5" />
+              <span className="font-bold">{unlockedAchievements}/{achievements.length} Achievements</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -119,7 +246,9 @@ export default function Dashboard() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {card.title === 'Total Revenue' ? card.value : <AnimatedCounter value={typeof card.value === 'number' ? card.value : 0} />}
+                    </p>
                     {card.subtitle && (
                       <p className="text-xs text-gray-500 mt-1">{card.subtitle}</p>
                     )}
@@ -207,6 +336,31 @@ export default function Dashboard() {
               <span className="text-emerald-50">Customer insights & analytics</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Achievements Section */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">🏆 Achievements</h3>
+            <p className="text-gray-600">Track your business milestones and unlock rewards!</p>
+          </div>
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg">
+            <span className="font-bold">{unlockedAchievements}/{achievements.length} Unlocked</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {achievements.map((achievement, index) => (
+            <AchievementBadge
+              key={index}
+              title={achievement.title}
+              description={achievement.description}
+              icon={achievement.icon}
+              unlocked={achievement.unlocked}
+            />
+          ))}
         </div>
       </div>
     </div>

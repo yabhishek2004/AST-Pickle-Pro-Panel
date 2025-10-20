@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase, localStorageHelpers, useLocalStorage, type Customer } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
-import { Plus, Edit2, Trash2, Search, Users, Phone, Mail, MapPin, TrendingUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Users, Phone, Mail, MapPin, TrendingUp, Star, Gift, Crown, Zap } from 'lucide-react';
 
 export default function Customers() {
   const { theme, themeColors } = useTheme();
@@ -20,6 +20,34 @@ export default function Customers() {
     state: '',
     pincode: '',
   });
+
+  // Calculate customer loyalty level and points
+  const getCustomerLoyaltyInfo = (customer: Customer) => {
+    const orders = localStorageHelpers.getOrders();
+    const customerOrders = orders.filter(order => order.customer_id === customer.id);
+    const totalSpent = customerOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    const points = Math.floor(totalSpent / 100); // 1 point per ₹100 spent
+    
+    let level = 'Bronze';
+    let levelColor = 'text-amber-600';
+    let levelIcon = Star;
+    
+    if (points >= 1000) {
+      level = 'Diamond';
+      levelColor = 'text-blue-600';
+      levelIcon = Crown;
+    } else if (points >= 500) {
+      level = 'Gold';
+      levelColor = 'text-yellow-600';
+      levelIcon = Gift;
+    } else if (points >= 100) {
+      level = 'Silver';
+      levelColor = 'text-gray-600';
+      levelIcon = Zap;
+    }
+    
+    return { points, level, levelColor, levelIcon, totalSpent, orderCount: customerOrders.length };
+  };
 
   // Get theme-specific classes for Customers
   const getThemeClasses = () => {
@@ -304,21 +332,36 @@ export default function Customers() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCustomers.map((customer) => (
-            <div
-              key={customer.id}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
-            >
-              <div className={`bg-gradient-to-br ${classes.cardHeader} p-6 text-white`}>
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold backdrop-blur-sm">
-                    {customer.name.charAt(0).toUpperCase()}
+          {filteredCustomers.map((customer) => {
+            const loyaltyInfo = getCustomerLoyaltyInfo(customer);
+            const LevelIcon = loyaltyInfo.levelIcon;
+            
+            return (
+              <div
+                key={customer.id}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              >
+                <div className={`bg-gradient-to-br ${classes.cardHeader} p-6 text-white`}>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold backdrop-blur-sm">
+                      {customer.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold">{customer.name}</h3>
+                          <p className="text-white/80 text-sm">Customer #{customer.id.slice(0, 8)}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className={`flex items-center space-x-1 ${loyaltyInfo.levelColor}`}>
+                            <LevelIcon className="w-5 h-5" />
+                            <span className="text-sm font-bold">{loyaltyInfo.level}</span>
+                          </div>
+                          <p className="text-white/80 text-xs">{loyaltyInfo.points} points</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold">{customer.name}</h3>
-                    <p className="text-white/80 text-sm">Customer #{customer.id.slice(0, 8)}</p>
-                  </div>
-                </div>
               </div>
 
               <div className="p-6 space-y-3">
@@ -353,15 +396,46 @@ export default function Customers() {
                   </div>
                 )}
 
+                {/* Loyalty Stats */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-gray-800 text-sm">Loyalty Status</h4>
+                    <div className={`flex items-center space-x-1 ${loyaltyInfo.levelColor}`}>
+                      <LevelIcon className="w-4 h-4" />
+                      <span className="text-sm font-bold">{loyaltyInfo.level}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-gray-500">Points</p>
+                      <p className="font-bold text-purple-600">{loyaltyInfo.points}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Orders</p>
+                      <p className="font-bold text-purple-600">{loyaltyInfo.orderCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Total Spent</p>
+                      <p className="font-bold text-purple-600">₹{loyaltyInfo.totalSpent.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Avg Order</p>
+                      <p className="font-bold text-purple-600">
+                        ₹{loyaltyInfo.orderCount > 0 ? Math.round(loyaltyInfo.totalSpent / loyaltyInfo.orderCount) : 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500">Total Orders</p>
-                    <p className={`text-lg font-bold ${classes.text}`}>{customer.total_orders}</p>
+                    <p className={`text-lg font-bold ${classes.text}`}>{loyaltyInfo.orderCount}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Total Spent</p>
                     <p className={`text-lg font-bold ${classes.text}`}>
-                      ₹{customer.total_spent.toLocaleString('en-IN')}
+                      ₹{loyaltyInfo.totalSpent.toLocaleString('en-IN')}
                     </p>
                   </div>
                 </div>
@@ -384,7 +458,8 @@ export default function Customers() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
